@@ -126,6 +126,38 @@ bool PortraitPreview::event(QEvent *event)
 	return QWidget::event(event);
 }
 
+static bool item_box(obs_sceneitem_t *item, double &left, double &top, double &w, double &h);
+
+/* Canvas centre lines shown while dragging. They turn bright yellow when the
+ * selected source's centre sits on them. */
+static void draw_guides(float cw, float ch, bool centeredX, bool centeredY)
+{
+	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
+	gs_eparam_t *color = gs_effect_get_param_by_name(solid, "color");
+	struct vec4 dim, hot;
+	vec4_set(&dim, 0.3f, 0.8f, 1.0f, 0.55f);
+	vec4_set(&hot, 1.0f, 0.85f, 0.1f, 1.0f);
+
+	while (gs_effect_loop(solid, "Solid")) {
+		/* vertical centre line */
+		gs_effect_set_vec4(color, centeredX ? &hot : &dim);
+		for (int o = -2; o <= 2; o += 2) {
+			gs_render_start(true);
+			gs_vertex2f(cw / 2.0f + (float)o, 0.0f);
+			gs_vertex2f(cw / 2.0f + (float)o, ch);
+			gs_render_stop(GS_LINES);
+		}
+		/* horizontal centre line */
+		gs_effect_set_vec4(color, centeredY ? &hot : &dim);
+		for (int o = -2; o <= 2; o += 2) {
+			gs_render_start(true);
+			gs_vertex2f(0.0f, ch / 2.0f + (float)o);
+			gs_vertex2f(cw, ch / 2.0f + (float)o);
+			gs_render_stop(GS_LINES);
+		}
+	}
+}
+
 static void draw_box(obs_sceneitem_t *item)
 {
 	struct matrix4 transform;
@@ -200,8 +232,18 @@ void PortraitPreview::Draw(void *param, uint32_t cx, uint32_t cy)
 			obs_scene_t *scene = obs_scene_from_source(source);
 			obs_sceneitem_t *item = scene ? obs_scene_find_sceneitem_by_id(scene, self->selectedId)
 						      : nullptr;
-			if (item)
+			if (item) {
+				if (self->dragging) {
+					double l, t, w, h;
+					bool cx = false, cy = false;
+					if (item_box(item, l, t, w, h)) {
+						cx = std::abs((l + w / 2.0) - ovi.base_width / 2.0) < 1.0;
+						cy = std::abs((t + h / 2.0) - ovi.base_height / 2.0) < 1.0;
+					}
+					draw_guides((float)ovi.base_width, (float)ovi.base_height, cx, cy);
+				}
 				draw_box(item);
+			}
 			obs_source_release(source);
 		}
 	}
@@ -292,6 +334,7 @@ void PortraitPreview::mousePressEvent(QMouseEvent *event)
 		double l, t, w, h;
 		if (item_box(sel, l, t, w, h) && std::abs(x - (l + w)) <= grab && std::abs(y - (t + h)) <= grab) {
 			dragMode = DragMode::Resize;
+			dragging = true;
 			dragStartX = x;
 			dragStartY = y;
 			startLeft = l;
@@ -330,6 +373,7 @@ void PortraitPreview::mousePressEvent(QMouseEvent *event)
 		emit ItemPicked((qint64)obs_sceneitem_get_id(hit.item));
 
 		dragMode = DragMode::Move;
+		dragging = true;
 		dragStartX = x;
 		dragStartY = y;
 		obs_sceneitem_get_pos(hit.item, &startPos);
@@ -409,7 +453,22 @@ void PortraitPreview::mouseMoveEvent(QMouseEvent *event)
 			info.bounds_type == OBS_BOUNDS_SCALE_OUTER ? PortraitCanvas::FitMode::Fill
 			: info.bounds_type == OBS_BOUNDS_STRETCH   ? PortraitCanvas::FitMode::Stretch
 								   : PortraitCanvas::FitMode::Fit;
-		pc.PlaceItem(item, (float)startLeft, (float)startTop, (float)w, (float)h, mode);
+		/* Hold Alt to resize around the centre (keeps a centred source centred) */
+		double left = startLeft, top = startTop;
+		if (event->modifiers() & Qt::AltModifier) {
+			w = std::max(20.0, startW + 2.0 * dx);
+			h = std::max(20.0, startH + 2.0 * dy);
+			if (event->modifiers() & Qt::ShiftModifier) {
+				double ratio = startW / startH;
+				if (w / h > ratio)
+					h = w / ratio;
+				else
+					w = h * ratio;
+			}
+			left = startLeft + (startW - w) / 2.0;
+			top = startTop + (startH - h) / 2.0;
+		}
+		pc.PlaceItem(item, (float)left, (float)top, (float)w, (float)h, mode);
 	}
 }
 
@@ -417,6 +476,7 @@ void PortraitPreview::mouseReleaseEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton && dragMode != DragMode::None) {
 		dragMode = DragMode::None;
+		dragging = false;
 		emit ItemEdited();
 	}
 	QWidget::mouseReleaseEvent(event);

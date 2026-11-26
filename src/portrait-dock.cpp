@@ -98,8 +98,9 @@ PortraitDock::PortraitDock(QWidget *parent) : QWidget(parent)
 	cl->addWidget(itemsBox);
 
 	/* ---------------- layout ---------------- */
-	auto *layoutBox =
-		new QGroupBox("Layout (drag in preview to move, corner square or mouse wheel to resize)", controls);
+	auto *layoutBox = new QGroupBox(
+		"Layout (drag to move, corner square or wheel to resize; Shift = keep shape, Alt = from centre)",
+		controls);
 	auto *ll = new QVBoxLayout(layoutBox);
 
 	auto *presets = new QGridLayout();

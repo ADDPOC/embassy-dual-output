@@ -6,6 +6,8 @@
 
 #include <QWidget>
 
+#include <atomic>
+
 #include <obs.h>
 
 class PortraitPreview : public QWidget {
@@ -49,6 +51,7 @@ private:
 
 	enum class DragMode { None, Move, Resize };
 	DragMode dragMode = DragMode::None;
+	std::atomic<bool> dragging{false}; /* read by the render thread */
 	double dragStartX = 0, dragStartY = 0;
 	double startLeft = 0, startTop = 0, startW = 0, startH = 0;
 	struct vec2 startPos = {};
