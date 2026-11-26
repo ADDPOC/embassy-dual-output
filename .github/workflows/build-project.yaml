@@ -285,13 +285,6 @@ jobs:
           target: x64
           config: ${{ needs.check-event.outputs.config }}
 
-      - name: Package Plugin 📀
-        uses: ./.github/actions/package-plugin
-        with:
-          target: x64
-          config: ${{ needs.check-event.outputs.config }}
-          package: ${{ fromJSON(needs.check-event.outputs.package) }}
-
       - name: Build Installer 💿
         run: |
           # Build Installer 💿
@@ -305,6 +298,13 @@ jobs:
           & $Iscc "/DAppVersion=$Version" "/DSourceDir=$Source" "/DOutputDir=$Out" installer\installer.iss
           if ( $LASTEXITCODE -ne 0 ) { throw "Installer build failed" }
           Get-ChildItem $Out
+
+      - name: Package Plugin 📀
+        uses: ./.github/actions/package-plugin
+        with:
+          target: x64
+          config: ${{ needs.check-event.outputs.config }}
+          package: ${{ fromJSON(needs.check-event.outputs.package) }}
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v4
