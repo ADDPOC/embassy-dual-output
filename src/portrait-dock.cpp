@@ -16,6 +16,7 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QSplitter>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -65,9 +66,12 @@ PortraitDock::PortraitDock(QWidget *parent) : QWidget(parent)
 	resolution->addItem("1080x1920", QSize(1080, 1920));
 	resolution->addItem("720x1280", QSize(720, 1280));
 	resolution->setToolTip("Portrait canvas size. Can only change while OBS is not streaming or recording.");
+	auto *saveButton = small_button("Save", "Save all portrait scenes and layouts now", scenesBox);
+	saveButton->setStyleSheet("font-weight: bold;");
 	sceneButtons->addWidget(addScene);
 	sceneButtons->addWidget(renameScene);
 	sceneButtons->addWidget(removeScene);
+	sceneButtons->addWidget(saveButton);
 	sceneButtons->addStretch();
 	sceneButtons->addWidget(resolution);
 	sl->addLayout(sceneButtons);
@@ -152,6 +156,11 @@ PortraitDock::PortraitDock(QWidget *parent) : QWidget(parent)
 	cl->addStretch();
 
 	/* ---------------- wiring ---------------- */
+	connect(saveButton, &QPushButton::clicked, this, [saveButton]() {
+		obs_frontend_save();
+		saveButton->setText("Saved \u2713");
+		QTimer::singleShot(1500, saveButton, [saveButton]() { saveButton->setText("Save"); });
+	});
 	connect(sceneList, &QListWidget::itemClicked, this, &PortraitDock::SceneClicked);
 	connect(addScene, &QPushButton::clicked, this, &PortraitDock::AddScene);
 	connect(renameScene, &QPushButton::clicked, this, &PortraitDock::RenameScene);
@@ -404,8 +413,10 @@ void PortraitDock::ItemChanged(QListWidgetItem *li)
 	if (refreshing || !li || !editScene)
 		return;
 	obs_sceneitem_t *item = obs_scene_find_sceneitem_by_id(editScene, li->data(Qt::UserRole).toLongLong());
-	if (item)
+	if (item) {
 		obs_sceneitem_set_visible(item, li->checkState() == Qt::Checked);
+		obs_frontend_save();
+	}
 }
 
 void PortraitDock::ShowAddSourceMenu()
