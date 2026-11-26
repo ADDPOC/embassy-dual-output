@@ -9,7 +9,7 @@ Stream **landscape 16:9 and portrait 9:16 at the same time** from one OBS, to as
 - Each group is **encoded once on your GPU**, then sent to every destination you tick. Adding a platform only uses more upload bandwidth, not more GPU.
 - Can start and stop with OBS's normal **Start Streaming** button.
 
-Requires **OBS Studio 31.1 or newer** on Windows 10/11 (64-bit).
+Requires **OBS Studio 33 or newer** (uses the OBS 33 plugin folder layout) on Windows 10/11 (64-bit).
 
 ---
 
@@ -28,10 +28,10 @@ Requires **OBS Studio 31.1 or newer** on Windows 10/11 (64-bit).
 ## 2. Install it
 
 1. **Close OBS.**
-2. Unzip the artifact. There's another zip inside, so unzip that too. Inside is a folder (`embassy-dual-output`) with `bin` and `data`.
+2. Unzip the artifact. There's another zip inside, so unzip that too. Inside is a folder (`embassy-dual-output`) with the `.dll` file and a `data` folder.
 3. Copy that folder into:
    `C:\ProgramData\obs-studio\plugins\`
-   The result should be `C:\ProgramData\obs-studio\plugins\embassy-dual-output\bin\64bit\embassy-dual-output.dll`.
+   The result should be `C:\ProgramData\obs-studio\plugins\embassy-dual-output\embassy-dual-output.dll` (OBS 33 plugin layout).
 4. Start OBS. Open **Docks** in the top menu and tick **Portrait Canvas** and **Dual Output Streams**.
 
 > **Important:** remove the **SE.Live / StreamElements plugin** and **Aitum Vertical** first. Each of them also adds a vertical canvas, and that conflict is what has been crashing your OBS. Uninstall them from Windows *Apps*. If OBS still crashes afterwards, reinstall OBS (keep the "delete settings" box unchecked).
