@@ -295,6 +295,9 @@ jobs:
           $Version = "${{ steps.setup.outputs.pluginVersion }}"
           $Source = "${{ github.workspace }}\release\${{ needs.check-event.outputs.config }}\${{ steps.setup.outputs.pluginName }}"
           $Out = "${{ github.workspace }}\release"
+          Write-Output "ISCC: $Iscc exists=$(Test-Path $Iscc)"
+          Write-Output "Source exists=$(Test-Path $Source)  Script exists=$(Test-Path installer\installer.iss)"
+          Get-ChildItem -Recurse "${{ github.workspace }}\release" | Select-Object -First 20 | ForEach-Object { $_.FullName }
           & $Iscc "/DAppVersion=$Version" "/DSourceDir=$Source" "/DOutputDir=$Out" installer\installer.iss
           if ( $LASTEXITCODE -ne 0 ) { throw "Installer build failed" }
           Get-ChildItem $Out
