@@ -27,6 +27,10 @@ Requires **OBS Studio 33 or newer** (uses the OBS 33 plugin folder layout) on Wi
 
 ## 2. Install it
 
+**Easy way:** open the downloaded artifact and run **`embassy-dual-output-…-windows-x64-Installer.exe`**. Close OBS first. It installs to the right folder automatically and adds an uninstaller in Windows *Apps*.
+
+**Manual way:**
+
 1. **Close OBS.**
 2. Unzip the artifact. There's another zip inside, so unzip that too. Inside is a folder (`embassy-dual-output`) with the `.dll` file and a `data` folder.
 3. Copy that folder into:

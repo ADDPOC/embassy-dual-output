@@ -292,6 +292,20 @@ jobs:
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
 
+      - name: Build Installer 💿
+        run: |
+          # Build Installer 💿
+          $Iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if ( ! ( Test-Path $Iscc ) ) {
+            choco install innosetup --no-progress -y
+          }
+          $Version = "${{ steps.setup.outputs.pluginVersion }}"
+          $Source = "${{ github.workspace }}\release\${{ needs.check-event.outputs.config }}\${{ steps.setup.outputs.pluginName }}"
+          $Out = "${{ github.workspace }}\release"
+          & $Iscc "/DAppVersion=$Version" "/DSourceDir=$Source" "/DOutputDir=$Out" installer\installer.iss
+          if ( $LASTEXITCODE -ne 0 ) { throw "Installer build failed" }
+          Get-ChildItem $Out
+
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v4
         with:
