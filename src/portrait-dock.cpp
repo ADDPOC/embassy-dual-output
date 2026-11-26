@@ -98,7 +98,8 @@ PortraitDock::PortraitDock(QWidget *parent) : QWidget(parent)
 	cl->addWidget(itemsBox);
 
 	/* ---------------- layout ---------------- */
-	auto *layoutBox = new QGroupBox("Layout for the selected source", controls);
+	auto *layoutBox =
+		new QGroupBox("Layout (drag in preview to move, corner square or mouse wheel to resize)", controls);
 	auto *ll = new QVBoxLayout(layoutBox);
 
 	auto *presets = new QGridLayout();
@@ -165,6 +166,22 @@ PortraitDock::PortraitDock(QWidget *parent) : QWidget(parent)
 	connect(props, &QPushButton::clicked, this, &PortraitDock::OpenProperties);
 	connect(filters, &QPushButton::clicked, this, &PortraitDock::OpenFilters);
 	connect(apply, &QPushButton::clicked, this, &PortraitDock::ApplyCustomLayout);
+
+	/* Clicking / dragging in the preview */
+	connect(preview, &PortraitPreview::ItemPicked, this, [this](qint64 id) {
+		for (int r = 0; r < itemList->count(); r++) {
+			if (itemList->item(r)->data(Qt::UserRole).toLongLong() == id) {
+				itemList->setCurrentRow(r);
+				return;
+			}
+		}
+		itemList->setCurrentRow(-1);
+		itemList->clearSelection();
+	});
+	connect(preview, &PortraitPreview::ItemEdited, this, [this]() {
+		LoadCustomFromItem();
+		obs_frontend_save();
+	});
 
 	listenerId = PortraitCanvas::Get().AddListener(
 		[this]() { QMetaObject::invokeMethod(this, "RefreshScenes", Qt::QueuedConnection); });
